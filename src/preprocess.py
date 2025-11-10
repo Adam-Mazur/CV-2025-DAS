@@ -1,6 +1,7 @@
 import pandas as pd
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
+from scipy.ndimage import median_filter
 import numpy as np
 
 
@@ -52,6 +53,19 @@ class ZScoreTransform(Transform):
         z = z.transpose()
 
         return z
+
+
+class MedianFilter(Transform):
+    def __init__(self, kernel_size: int = 3):
+        self.kernel_size = int(kernel_size)
+
+    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+        data = df.astype(float).copy()
+        filtered_data = median_filter(
+            data.values, size=(self.kernel_size, self.kernel_size), mode="nearest"
+        )
+        return pd.DataFrame(filtered_data, index=data.index, columns=data.columns)
+
 
 def set_axis(x: np.ndarray, no_labels: int = 7) -> tuple[np.ndarray, np.ndarray]:
     x = np.asarray(x)
