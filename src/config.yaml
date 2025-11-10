@@ -7,3 +7,22 @@ metadata:
   file_duration: 10
   samples_per_file: 6250
   date_start: '2024-05-07'
+
+transforms:
+  zscore:
+    window: 11
+  median: 
+    kernel_size: 5
+  tv:
+    weight: 0.05
+  resize:
+    width: 500
+    height: 500
+
+methods:
+  hough:
+    threshold1: 100
+    threshold2: 200
+    rho: 1
+    theta: 0.0174533
+    hough_threshold: 100

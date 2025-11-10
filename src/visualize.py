@@ -1,4 +1,4 @@
-from src.preprocess import Transform
+from src.transforms import Transform
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -151,7 +151,7 @@ def visualize_lines(
     )
 
     ax = plt.gca()
-    ax.set_title("Image with Lines", fontsize=10)
+    ax.set_title("Detected lines", fontsize=10)
 
     ax.set_xlabel("Space (m)", fontsize=9)
     ax.set_ylabel("Time (s)", fontsize=9)
