@@ -56,24 +56,26 @@ def visualize_transforms(
         frames.append(current.copy())
         names.append(t.__class__.__name__)
 
-    all_vals = np.concatenate([np.ravel(f.values) for f in frames if f.size > 0])
-    all_vals = all_vals[np.isfinite(all_vals)]
-    if all_vals.size == 0:
-        vmin, vmax = 0.0, 1.0
-    else:
-        vmin, vmax = float(np.min(all_vals)), float(np.max(all_vals))
-        if vmin == vmax:
-            eps = abs(vmin) * 1e-6 if vmin != 0 else 1e-6
-            vmin -= eps
-            vmax += eps
+    vmin_vmax = []
+    for f in frames:
+        vals = np.ravel(f.values) if f.size > 0 else np.array([])
+        vals = vals[np.isfinite(vals)]
+        if vals.size == 0:
+            vmin, vmax = 0.0, 1.0
+        else:
+            vmin, vmax = float(np.min(vals)), float(np.max(vals))
+            if vmin == vmax:
+                eps = abs(vmin) * 1e-6 if vmin != 0 else 1e-6
+                vmin -= eps
+                vmax += eps
+        vmin_vmax.append((vmin, vmax))
 
     n = len(frames)
     fig, axes = plt.subplots(1, n, figsize=(4 * n, 4), constrained_layout=True)
     if n == 1:
         axes = [axes]
 
-    mappable = None
-    for ax, f, name in zip(axes, frames, names):
+    for ax, f, name, (vmin, vmax) in zip(axes, frames, names, vmin_vmax):
         im = ax.imshow(
             f.values,
             aspect="auto",
