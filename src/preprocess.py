@@ -2,6 +2,7 @@ import pandas as pd
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 from scipy.ndimage import median_filter
+from skimage.restoration import denoise_tv_chambolle
 import numpy as np
 
 
@@ -65,6 +66,16 @@ class MedianFilter(Transform):
             data.values, size=(self.kernel_size, self.kernel_size), mode="nearest"
         )
         return pd.DataFrame(filtered_data, index=data.index, columns=data.columns)
+
+
+class TotalVariationDenoising(Transform):
+    def __init__(self, weight: float = 0.1):
+        self.weight = float(weight)
+
+    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+        data = df.astype(float).copy()
+        denoised_data = denoise_tv_chambolle(data.values, weight=self.weight)
+        return pd.DataFrame(denoised_data, index=data.index, columns=data.columns)
 
 
 def set_axis(x: np.ndarray, no_labels: int = 7) -> tuple[np.ndarray, np.ndarray]:
