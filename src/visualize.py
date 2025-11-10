@@ -30,7 +30,7 @@ def _format_label(lbl):
 
 
 def visualize_transforms(
-    transforms: list[Transform], df: pd.DataFrame, save_path: str = None
+    transforms: list[Transform], df: pd.DataFrame | np.ndarray, save_path: str = None
 ):
     if isinstance(df, np.ndarray):
         df = pd.DataFrame(df)
@@ -96,6 +96,101 @@ def visualize_transforms(
         cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
         cbar.ax.set_ylabel("Value", fontsize=9)
         cbar.ax.tick_params(labelsize=8)
+
+    if save_path is not None:
+        plt.savefig(save_path, bbox_inches="tight")
+    else:
+        plt.show()
+
+
+def visualize_lines(
+    image: pd.DataFrame | np.ndarray, lines: list[tuple], save_path: str = None
+):
+    if isinstance(image, pd.DataFrame):
+        f = image.copy()
+        arr = f.values
+    elif isinstance(image, np.ndarray):
+        arr = np.asarray(image)
+        f = pd.DataFrame(arr)
+    else:
+        raise TypeError("image must be a pandas DataFrame or a numpy array")
+
+    vals = np.ravel(arr) if arr.size > 0 else np.array([])
+    vals = vals[np.isfinite(vals)]
+    if vals.size == 0:
+        vmin, vmax = 0.0, 1.0
+    else:
+        vmin, vmax = float(np.min(vals)), float(np.max(vals))
+        if vmin == vmax:
+            eps = abs(vmin) * 1e-6 if vmin != 0 else 1e-6
+            vmin -= eps
+            vmax += eps
+
+    x_arr = np.asarray(f.columns)
+    y_arr = np.asarray(f.index)
+    try:
+        x_vals = np.asarray(x_arr, dtype=float)
+        y_vals = np.asarray(y_arr, dtype=float)
+        x_min, x_max = float(np.min(x_vals)), float(np.max(x_vals))
+        y_min, y_max = float(np.min(y_vals)), float(np.max(y_vals))
+    except Exception:
+        h, w = f.values.shape
+        x_min, x_max = 0.0, float(w - 1)
+        y_min, y_max = 0.0, float(h - 1)
+
+    plt.figure(figsize=(10, 10))
+    im = plt.imshow(
+        f.values,
+        aspect="auto",
+        origin="lower",
+        cmap="viridis",
+        interpolation="none",
+        vmin=vmin,
+        vmax=vmax,
+        extent=(x_min, x_max, y_min, y_max),
+    )
+
+    ax = plt.gca()
+    ax.set_title("Image with Lines", fontsize=10)
+
+    ax.set_xlabel("Space (m)", fontsize=9)
+    ax.set_ylabel("Time (s)", fontsize=9)
+
+    x_pos, x_lbls = set_axis(x_arr)
+    y_pos, y_lbls = set_axis(y_arr)
+
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(
+        [_format_label(lbl) for lbl in x_lbls], rotation=45, ha="right", fontsize=8
+    )
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels([_format_label(lbl) for lbl in y_lbls], fontsize=8)
+
+    ax.tick_params(axis="both", which="major", labelsize=8, length=4)
+
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
+
+    fig = plt.gcf()
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
+    cbar.ax.set_ylabel("Value", fontsize=9)
+    cbar.ax.tick_params(labelsize=8)
+
+    for line in lines:
+        if len(line) == 2:
+            rho, theta = line
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = a * rho
+            y0 = b * rho
+            x1 = x0 + 1000 * (-b)
+            y1 = y0 + 1000 * (a)
+            x2 = x0 - 1000 * (-b)
+            y2 = y0 - 1000 * (a)
+            ax.plot([x1, x2], [y1, y2], color="red", linewidth=2)
+        elif len(line) == 4:
+            x1, y1, x2, y2 = line
+            ax.plot([x1, x2], [y1, y2], color="red", linewidth=2)
 
     if save_path is not None:
         plt.savefig(save_path, bbox_inches="tight")
