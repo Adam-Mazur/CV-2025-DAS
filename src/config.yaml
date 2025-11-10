@@ -21,8 +21,8 @@ transforms:
 
 methods:
   hough:
-    threshold1: 100
+    threshold1: 50
     threshold2: 200
     rho: 1
-    theta: 0.0174533
-    hough_threshold: 100
+    theta: 0.01
+    hough_threshold: 90

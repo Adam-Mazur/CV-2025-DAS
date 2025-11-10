@@ -47,6 +47,7 @@ if __name__ == "__main__":
 
     print("Importing modules...")
     from src.visualize import visualize_lines
+    from src.group_lines import group_lines
     from src.method import Method
     from src.get_data import get_data
     from datetime import time
@@ -83,6 +84,7 @@ if __name__ == "__main__":
 
     print("Detecting lines...")
     lines = method_obj.detect(data)
+    lines = group_lines(lines, data.shape[1])
 
     print("Visualizing results...")
     visualize_lines(data, lines, args.output)
