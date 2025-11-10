@@ -32,11 +32,16 @@ def _format_label(lbl):
 def visualize_transforms(
     transforms: list[Transform], df: pd.DataFrame, save_path: str = None
 ):
+    if isinstance(df, np.ndarray):
+        df = pd.DataFrame(df)
+
     frames = [df.copy()]
     names = ["Original"]
     current = df.copy()
     for t in transforms:
         current = t.apply(current)
+        if isinstance(current, np.ndarray):
+            current = pd.DataFrame(current)
         frames.append(current.copy())
         names.append(t.__class__.__name__)
 

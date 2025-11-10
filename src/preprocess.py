@@ -3,21 +3,22 @@ from abc import ABC, abstractmethod
 from scipy.ndimage import median_filter
 from skimage.restoration import denoise_tv_chambolle
 import numpy as np
+import cv2
 
 
 class Transform(ABC):
     @abstractmethod
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: pd.DataFrame | np.ndarray) -> pd.DataFrame | np.ndarray:
         pass
 
 
 class AbsoluteValue(Transform):
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: pd.DataFrame | np.ndarray) -> pd.DataFrame | np.ndarray:
         return df.abs()
 
 
 class Normalize(Transform):
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: pd.DataFrame | np.ndarray) -> pd.DataFrame | np.ndarray:
         return (df - df.min()) / (df.max() - df.min())
 
 
@@ -34,7 +35,7 @@ class ZScoreTransform(Transform):
         )
         self.eps = float(eps)
 
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: pd.DataFrame | np.ndarray) -> pd.DataFrame | np.ndarray:
         data = df.astype(float).copy()
         data = data.transpose()
 
@@ -59,7 +60,7 @@ class MedianFilter(Transform):
     def __init__(self, kernel_size: int = 3):
         self.kernel_size = int(kernel_size)
 
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: pd.DataFrame | np.ndarray) -> pd.DataFrame | np.ndarray:
         data = df.astype(float).copy()
         filtered_data = median_filter(
             data.values, size=(self.kernel_size, self.kernel_size), mode="nearest"
@@ -71,7 +72,18 @@ class TotalVariationDenoising(Transform):
     def __init__(self, weight: float = 0.1):
         self.weight = float(weight)
 
-    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, df: pd.DataFrame | np.ndarray) -> pd.DataFrame | np.ndarray:
         data = df.astype(float).copy()
         denoised_data = denoise_tv_chambolle(data.values, weight=self.weight)
         return pd.DataFrame(denoised_data, index=data.index, columns=data.columns)
+
+
+class Resize(Transform):
+    def __init__(self, width: int, height: int):
+        self.width = int(width)
+        self.height = int(height)
+
+    def apply(self, df: pd.DataFrame | np.ndarray) -> np.ndarray:
+        img = (df.values * 255).astype(np.uint8)
+        resized_img = cv2.resize(img, (self.width, self.height))
+        return resized_img
