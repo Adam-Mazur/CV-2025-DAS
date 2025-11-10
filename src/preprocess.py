@@ -20,6 +20,39 @@ class Normalize(Transform):
         return (df - df.min()) / (df.max() - df.min())
 
 
+class ZScoreTransform(Transform):
+    def __init__(
+        self,
+        window: int = 51,
+        min_periods: int | None = None,
+        eps: float = 1e-8,
+    ):
+        self.window = int(window)
+        self.min_periods = (
+            int(min_periods) if min_periods is not None else max(3, self.window // 2)
+        )
+        self.eps = float(eps)
+
+    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+        data = df.astype(float).copy()
+        data = data.transpose()
+
+        rolling_mean = data.rolling(
+            window=self.window, center=True, min_periods=self.min_periods
+        ).mean()
+
+        ddof = 1 if self.window > 1 else 0
+        rolling_std = data.rolling(
+            window=self.window, center=True, min_periods=self.min_periods
+        ).std(ddof=ddof)
+
+        rolling_std = rolling_std.where(rolling_std > 0, other=np.nan).fillna(self.eps)
+
+        z = (data - rolling_mean) / rolling_std
+        z = z.transpose()
+
+        return z
+
 def set_axis(x: np.ndarray, no_labels: int = 7) -> tuple[np.ndarray, np.ndarray]:
     x = np.asarray(x)
     nx = x.shape[0]
@@ -104,10 +137,7 @@ def visualize_transforms(
 
         ax.tick_params(axis="both", which="major", labelsize=8, length=4)
 
-        mappable = im
-
-    if mappable is not None:
-        cbar = fig.colorbar(mappable, ax=axes, shrink=0.8, pad=0.02)
+        cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
         cbar.ax.set_ylabel("Value", fontsize=9)
         cbar.ax.tick_params(labelsize=8)
 
