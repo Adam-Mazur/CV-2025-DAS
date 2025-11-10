@@ -1,0 +1,9 @@
+paths:
+  data_dir: 'data/'
+
+metadata:
+  dx: 5.106500953873407
+  dt: 0.0016
+  file_duration: 10
+  samples_per_file: 6250
+  date_start: '2024-05-07'
