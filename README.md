@@ -1,3 +1,10 @@
+## Best so far:
+```bash
+uv run -m src.main --method hough --transforms abs clip normalize resize nlm median clip normalize --output temp.jpg --start-time '09:00:17' --end-time '09:03:32' --group-lines
+```
+
+With config.yaml:
+```yaml
 paths:
   data_dir: 'data/'
 
@@ -36,3 +43,4 @@ methods:
 
 group_lines:
   min_cluster_size: 3
+```

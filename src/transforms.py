@@ -93,11 +93,11 @@ class TotalVariationDenoising(Transform):
 
 class NonLocalMeansDenoising(Transform):
     def __init__(
-        self, h: float = 20, templateWindowSize: int = 7, searchWindowSize: int = 35
+        self, h: float = 20, template_window_size: int = 7, search_window_size: int = 35
     ):
         self.h = h
-        self.templateWindowSize = templateWindowSize
-        self.searchWindowSize = searchWindowSize
+        self.template_window_size = template_window_size
+        self.search_window_size = search_window_size
 
     def apply(self, df):
         data = (df.values * 255).astype(np.uint8)
@@ -105,8 +105,8 @@ class NonLocalMeansDenoising(Transform):
             data,
             None,
             h=self.h,
-            templateWindowSize=self.templateWindowSize,
-            searchWindowSize=self.searchWindowSize,
+            templateWindowSize=self.template_window_size,
+            searchWindowSize=self.search_window_size,
         )
         denoised = denoised.astype(float) / 255.0
         return pd.DataFrame(denoised, index=df.index, columns=df.columns)
