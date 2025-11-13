@@ -26,3 +26,6 @@ methods:
     rho: 1
     theta: 0.01
     hough_threshold: 90
+
+group_lines:
+  min_cluster_size: 3

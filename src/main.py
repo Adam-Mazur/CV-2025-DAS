@@ -84,7 +84,9 @@ if __name__ == "__main__":
 
     print("Detecting lines...")
     lines = method_obj.detect(data)
-    lines = group_lines(lines, data.shape[1])
+
+    print("Grouping lines...")
+    lines = group_lines(lines, data.shape[1], **config.get("group_lines", {}))
 
     print("Visualizing results...")
     visualize_lines(data, lines, args.output)

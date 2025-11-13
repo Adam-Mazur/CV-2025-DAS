@@ -40,7 +40,7 @@ def custom_distance(line1, line2, width):
     points1 = to_points(line1, 0, width)
     points2 = to_points(line2, 0, width)
 
-    return np.linalg.norm(points1 - points2)
+    return np.linalg.norm(points1 - points2, axis=1).max()
 
 
 def custom_average(lines, width):
@@ -56,7 +56,7 @@ def custom_average(lines, width):
     return from_points([point1, point2])
 
 
-def group_lines(lines, width):
+def group_lines(lines, width, min_cluster_size=2):
     n = len(lines)
 
     lines = np.array(lines)
@@ -69,7 +69,11 @@ def group_lines(lines, width):
             dist = custom_distance(lines[i], lines[j], width)
             dist_matrix[i, j] = dist_matrix[j, i] = dist
 
-    clusterer = hdbscan.HDBSCAN(metric="precomputed", min_cluster_size=2)
+    clusterer = hdbscan.HDBSCAN(
+        metric="precomputed",
+        min_cluster_size=min_cluster_size,
+        allow_single_cluster=True,
+    )
     labels = clusterer.fit_predict(dist_matrix)
 
     unique_labels = np.unique(labels[labels >= 0])
