@@ -100,9 +100,7 @@ if __name__ == "__main__":
     if args.group_lines:
         print("Grouping lines...")
         if len(lines[0]) == 4:
-            lines = group_segments(
-                lines, data.shape[1], **config.get("group_segments", {})
-            )
+            lines = group_segments(lines, **config.get("group_segments", {}))
         else:
             lines = group_lines(lines, data.shape[1], **config.get("group_lines", {}))
 
