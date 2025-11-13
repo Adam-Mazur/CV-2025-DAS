@@ -70,6 +70,8 @@ def visualize_lines(image: pd.DataFrame, lines: list[tuple], save_path: str = No
             x2 = image.shape[1] - 1
             y1 = (rho - a * x1) / b
             y2 = (rho - a * x2) / b
+            y1 = np.clip(y1, 0, image.shape[0] - 1)
+            y2 = np.clip(y2, 0, image.shape[0] - 1)
             ax.plot([x1, x2], [y1, y2], color="red", linewidth=2)
         elif len(line) == 4:
             x1, y1, x2, y2 = line
