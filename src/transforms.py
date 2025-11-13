@@ -19,7 +19,9 @@ class AbsoluteValue(Transform):
 
 class Normalize(Transform):
     def apply(self, df: pd.DataFrame) -> pd.DataFrame:
-        return (df - df.min()) / (df.max() - df.min())
+        min_val = df.min().min()
+        max_val = df.max().max()
+        return (df - min_val) / (max_val - min_val)
 
 
 class Clip(Transform):
