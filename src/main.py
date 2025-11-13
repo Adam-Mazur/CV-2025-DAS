@@ -6,6 +6,7 @@ if __name__ == "__main__":
     transforms = {
         "abs": "AbsoluteValue",
         "normalize": "Normalize",
+        "clip": "Clip",
         "zscore": "ZScoreTransform",
         "median": "MedianFilter",
         "tv": "TotalVariationDenoising",

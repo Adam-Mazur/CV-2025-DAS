@@ -22,6 +22,17 @@ class Normalize(Transform):
         return (df - df.min()) / (df.max() - df.min())
 
 
+class Clip(Transform):
+    def __init__(self, first_percentile: float = 1.0, last_percentile: float = 99.0):
+        self.first_percentile = float(first_percentile)
+        self.last_percentile = float(last_percentile)
+
+    def apply(self, df: pd.DataFrame) -> pd.DataFrame:
+        lower_bound = np.percentile(df.values, self.first_percentile)
+        upper_bound = np.percentile(df.values, self.last_percentile)
+        return df.clip(lower=lower_bound, upper=upper_bound)
+
+
 class ZScoreTransform(Transform):
     def __init__(
         self,

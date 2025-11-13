@@ -18,6 +18,9 @@ transforms:
   resize:
     width: 500
     height: 500
+  clip:
+    first_percentile: 1
+    last_percentile: 99
 
 methods:
   hough:
