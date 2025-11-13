@@ -76,6 +76,22 @@ def visualize_lines(image: pd.DataFrame, lines: list[tuple], save_path: str = No
         elif len(line) == 4:
             x1, y1, x2, y2 = line
             ax.plot([x1, x2], [y1, y2], color="red", linewidth=2)
+        
+        velocity = (x2 - x1) / (y2 - y1) if y2 != y1 else float("inf")
+        dx = image.columns[1] - image.columns[0]
+        dt = (image.index[1] - image.index[0]).total_seconds()
+        velocity = velocity * (dx / dt) * 3.6 # Convert to km/h
+        velocity = abs(velocity)
+        mid_x = (x1 + x2) / 2
+        mid_y = (y1 + y2) / 2
+        ax.text(
+            mid_x,
+            mid_y,
+            f"{velocity:.2f} km/h",
+            color="yellow",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="black", alpha=0.7),
+        )
 
     plt.tight_layout()
     if save_path is not None:
