@@ -2,7 +2,10 @@ import argparse
 
 
 if __name__ == "__main__":
-    methods = {"hough": ("hough_method", "HoughMethod")}
+    methods = {
+        "hough": ("hough_method", "HoughMethod"),
+        "hough_prob": ("hough_prob_method", "HoughProbMethod"),
+    }
     transforms = {
         "abs": "AbsoluteValue",
         "normalize": "Normalize",
@@ -54,7 +57,7 @@ if __name__ == "__main__":
 
     print("Importing modules...")
     from src.visualize import visualize_lines
-    from src.group_lines import group_lines
+    from src.group_lines import group_lines, group_segments
     from src.method import Method
     from src.get_data import get_data
     from datetime import time
@@ -85,7 +88,9 @@ if __name__ == "__main__":
         data = t.apply(data)
 
     method_module_name, method_class_name = methods[args.method]
-    method_cls = getattr(importlib.import_module("src." + method_module_name), method_class_name)
+    method_cls = getattr(
+        importlib.import_module("src." + method_module_name), method_class_name
+    )
     method_config = config["methods"].get(args.method, {})
     method_obj: Method = method_cls(**method_config)
 
@@ -94,7 +99,12 @@ if __name__ == "__main__":
 
     if args.group_lines:
         print("Grouping lines...")
-        lines = group_lines(lines, data.shape[1], **config.get("group_lines", {}))
+        if len(lines[0]) == 4:
+            lines = group_segments(
+                lines, data.shape[1], **config.get("group_segments", {})
+            )
+        else:
+            lines = group_lines(lines, data.shape[1], **config.get("group_lines", {}))
 
     print("Visualizing results...")
     visualize_lines(data, lines, args.output)

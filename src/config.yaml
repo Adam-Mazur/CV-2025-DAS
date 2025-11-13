@@ -33,6 +33,18 @@ methods:
     rho: 1
     theta: 0.01
     hough_threshold: 120
+  hough_prob:
+    threshold1: 50
+    threshold2: 200
+    rho: 1
+    theta: 0.01
+    hough_threshold: 40
+    min_line_length: 80
+    max_line_gap: 25
 
 group_lines:
   min_cluster_size: 3
+
+group_segments:
+  min_cluster_size: 2
+  min_samples: 1
