@@ -43,6 +43,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--end-time", type=str, required=True, help="End time for analysis (HH:MM:SS)."
     )
+    parser.add_argument(
+        "--group-lines",
+        action="store_true",
+        help="Whether to group similar detected lines.",
+    )
     args = parser.parse_args()
 
     print("Importing modules...")
@@ -85,8 +90,9 @@ if __name__ == "__main__":
     print("Detecting lines...")
     lines = method_obj.detect(data)
 
-    print("Grouping lines...")
-    lines = group_lines(lines, data.shape[1], **config.get("group_lines", {}))
+    if args.group_lines:
+        print("Grouping lines...")
+        lines = group_lines(lines, data.shape[1], **config.get("group_lines", {}))
 
     print("Visualizing results...")
     visualize_lines(data, lines, args.output)

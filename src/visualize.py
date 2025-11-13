@@ -1,4 +1,5 @@
 from src.transforms import Transform
+from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -16,183 +17,66 @@ def set_axis(x: np.ndarray, no_labels: int = 7) -> tuple[np.ndarray, np.ndarray]
     return positions, labels
 
 
-def _format_label(lbl):
-    try:
-        if np.issubdtype(type(lbl), np.number):
-            return str(np.round(float(lbl), 3))
-        if hasattr(lbl, "strftime"):
-            return lbl.strftime("%H:%M:%S")
-        if isinstance(lbl, (np.datetime64,)):
-            return pd.to_datetime(lbl).strftime("%H:%M:%S")
-    except Exception:
-        pass
-    return str(lbl)
+def visualize_dataframe(ax, df: pd.DataFrame, name: str = "DAS data"):
+    low, high = np.percentile(df, [1, 99])
+    norm = Normalize(vmin=low, vmax=high, clip=True)
+    im = ax.imshow(df, interpolation="none", aspect="auto", norm=norm)
+    plt.colorbar(im, ax=ax)
+    ax.set_title(name, fontsize=10)
+    ax.set_ylabel("Time")
+    ax.set_xlabel("Space [m]")
+    x_positions, x_labels = set_axis(df.columns)
+    x_labels = x_labels.astype(float)
+    ax.set_xticks(x_positions, np.round(x_labels))
+    y_positions, y_labels = set_axis(df.index.time)
+    ax.set_yticks(y_positions, y_labels)
 
 
 def visualize_transforms(
-    transforms: list[Transform], df: pd.DataFrame | np.ndarray, save_path: str = None
+    transforms: list[Transform], df: pd.DataFrame, save_path: str = None
 ):
-    if isinstance(df, np.ndarray):
-        df = pd.DataFrame(df)
-
-    frames = [df.copy()]
+    dataframes = [df.copy()]
     names = ["Original"]
     current = df.copy()
     for t in transforms:
         current = t.apply(current)
-        if isinstance(current, np.ndarray):
-            current = pd.DataFrame(current)
-        frames.append(current.copy())
+        dataframes.append(current.copy())
         names.append(t.__class__.__name__)
 
-    vmin_vmax = []
-    for f in frames:
-        vals = np.ravel(f.values) if f.size > 0 else np.array([])
-        vals = vals[np.isfinite(vals)]
-        if vals.size == 0:
-            vmin, vmax = 0.0, 1.0
-        else:
-            vmin, vmax = float(np.min(vals)), float(np.max(vals))
-            if vmin == vmax:
-                eps = abs(vmin) * 1e-6 if vmin != 0 else 1e-6
-                vmin -= eps
-                vmax += eps
-        vmin_vmax.append((vmin, vmax))
+    n = len(dataframes)
+    fig, axes = plt.subplots(1, n, figsize=(6 * n, 6), constrained_layout=True)
 
-    n = len(frames)
-    fig, axes = plt.subplots(1, n, figsize=(4 * n, 4), constrained_layout=True)
-    if n == 1:
-        axes = [axes]
-
-    for ax, f, name, (vmin, vmax) in zip(axes, frames, names, vmin_vmax):
-        im = ax.imshow(
-            f.values,
-            aspect="auto",
-            origin="lower",
-            cmap="viridis",
-            interpolation="none",
-            vmin=vmin,
-            vmax=vmax,
-        )
-        ax.set_title(name, fontsize=10)
-
-        ax.set_xlabel("Space (m)", fontsize=9)
-        ax.set_ylabel("Time (s)", fontsize=9)
-
-        x_arr = np.asarray(f.columns)
-        y_arr = np.asarray(f.index)
-        x_pos, x_lbls = set_axis(x_arr)
-        y_pos, y_lbls = set_axis(y_arr)
-
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(
-            [_format_label(lbl) for lbl in x_lbls], rotation=45, ha="right", fontsize=8
-        )
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels([_format_label(lbl) for lbl in y_lbls], fontsize=8)
-
-        ax.tick_params(axis="both", which="major", labelsize=8, length=4)
-
-        cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
-        cbar.ax.set_ylabel("Value", fontsize=9)
-        cbar.ax.tick_params(labelsize=8)
+    for ax, df, name in zip(axes, dataframes, names):
+        visualize_dataframe(ax, df, name)
 
     if save_path is not None:
-        plt.savefig(save_path, bbox_inches="tight")
+        plt.savefig(save_path)
     else:
         plt.show()
 
 
-def visualize_lines(
-    image: pd.DataFrame | np.ndarray, lines: list[tuple], save_path: str = None
-):
-    if isinstance(image, pd.DataFrame):
-        f = image.copy()
-        arr = f.values
-    elif isinstance(image, np.ndarray):
-        arr = np.asarray(image)
-        f = pd.DataFrame(arr)
-    else:
-        raise TypeError("image must be a pandas DataFrame or a numpy array")
+def visualize_lines(image: pd.DataFrame, lines: list[tuple], save_path: str = None):
+    _ = plt.figure(figsize=(6, 6))
+    ax = plt.axes()
 
-    vals = np.ravel(arr) if arr.size > 0 else np.array([])
-    vals = vals[np.isfinite(vals)]
-    if vals.size == 0:
-        vmin, vmax = 0.0, 1.0
-    else:
-        vmin, vmax = float(np.min(vals)), float(np.max(vals))
-        if vmin == vmax:
-            eps = abs(vmin) * 1e-6 if vmin != 0 else 1e-6
-            vmin -= eps
-            vmax += eps
-
-    x_arr = np.asarray(f.columns)
-    y_arr = np.asarray(f.index)
-    try:
-        x_vals = np.asarray(x_arr, dtype=float)
-        y_vals = np.asarray(y_arr, dtype=float)
-        x_min, x_max = float(np.min(x_vals)), float(np.max(x_vals))
-        y_min, y_max = float(np.min(y_vals)), float(np.max(y_vals))
-    except Exception:
-        h, w = f.values.shape
-        x_min, x_max = 0.0, float(w - 1)
-        y_min, y_max = 0.0, float(h - 1)
-
-    plt.figure(figsize=(10, 10))
-    im = plt.imshow(
-        f.values,
-        aspect="auto",
-        origin="lower",
-        cmap="viridis",
-        interpolation="none",
-        vmin=vmin,
-        vmax=vmax,
-        extent=(x_min, x_max, y_min, y_max),
-    )
-
-    ax = plt.gca()
-    ax.set_title("Detected lines", fontsize=10)
-
-    ax.set_xlabel("Space (m)", fontsize=9)
-    ax.set_ylabel("Time (s)", fontsize=9)
-
-    x_pos, x_lbls = set_axis(x_arr)
-    y_pos, y_lbls = set_axis(y_arr)
-
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(
-        [_format_label(lbl) for lbl in x_lbls], rotation=45, ha="right", fontsize=8
-    )
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels([_format_label(lbl) for lbl in y_lbls], fontsize=8)
-
-    ax.tick_params(axis="both", which="major", labelsize=8, length=4)
-
-    ax.set_xlim(x_min, x_max)
-    ax.set_ylim(y_min, y_max)
-
-    fig = plt.gcf()
-    cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
-    cbar.ax.set_ylabel("Value", fontsize=9)
-    cbar.ax.tick_params(labelsize=8)
+    visualize_dataframe(ax, image, name="Detected Lines")
 
     for line in lines:
         if len(line) == 2:
             rho, theta = line
             a = np.cos(theta)
             b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            x1 = x0 + 1000 * (-b)
-            y1 = y0 + 1000 * (a)
-            x2 = x0 - 1000 * (-b)
-            y2 = y0 - 1000 * (a)
+            x1 = 1
+            x2 = image.shape[1] - 1
+            y1 = (rho - a * x1) / b
+            y2 = (rho - a * x2) / b
             ax.plot([x1, x2], [y1, y2], color="red", linewidth=2)
         elif len(line) == 4:
             x1, y1, x2, y2 = line
             ax.plot([x1, x2], [y1, y2], color="red", linewidth=2)
 
+    plt.tight_layout()
     if save_path is not None:
-        plt.savefig(save_path, bbox_inches="tight")
+        plt.savefig(save_path)
     else:
         plt.show()

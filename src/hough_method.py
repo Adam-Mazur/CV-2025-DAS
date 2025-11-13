@@ -19,9 +19,8 @@ class HoughMethod(Method):
         self.theta = theta
         self.hough_threshold = hough_threshold
 
-    def detect(self, data: pd.DataFrame | np.ndarray) -> list[tuple]:
-        if isinstance(data, pd.DataFrame):
-            data = (data.values * 255).astype(np.uint8)
+    def detect(self, data: pd.DataFrame) -> list[tuple]:
+        data = (data.values * 255).astype(np.uint8)
 
         edges = cv2.Canny(data, self.threshold1, self.threshold2)
         lines = cv2.HoughLines(edges, self.rho, self.theta, self.hough_threshold)
@@ -30,4 +29,3 @@ class HoughMethod(Method):
             return []
 
         return [line[0] for line in lines]
-
