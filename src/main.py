@@ -11,6 +11,7 @@ if __name__ == "__main__":
         "median": "MedianFilter",
         "tv": "TotalVariationDenoising",
         "resize": "Resize",
+        "nlm": "NonLocalMeansDenoising",
     }
 
     parser = argparse.ArgumentParser(

@@ -91,6 +91,27 @@ class TotalVariationDenoising(Transform):
         return pd.DataFrame(denoised_data, index=data.index, columns=data.columns)
 
 
+class NonLocalMeansDenoising(Transform):
+    def __init__(
+        self, h: float = 20, templateWindowSize: int = 7, searchWindowSize: int = 35
+    ):
+        self.h = h
+        self.templateWindowSize = templateWindowSize
+        self.searchWindowSize = searchWindowSize
+
+    def apply(self, df):
+        data = (df.values * 255).astype(np.uint8)
+        denoised = cv2.fastNlMeansDenoising(
+            data,
+            None,
+            h=self.h,
+            templateWindowSize=self.templateWindowSize,
+            searchWindowSize=self.searchWindowSize,
+        )
+        denoised = denoised.astype(float) / 255.0
+        return pd.DataFrame(denoised, index=df.index, columns=df.columns)
+
+
 class Resize(Transform):
     def __init__(self, width: int, height: int):
         self.width = int(width)
