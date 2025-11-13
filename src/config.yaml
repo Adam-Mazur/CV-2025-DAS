@@ -46,6 +46,6 @@ group_lines:
   min_cluster_size: 3
 
 group_segments:
-  min_cluster_size: 10
-  min_samples: 10
-  points_per_segment: 15
+  min_cluster_size: 8
+  min_samples: 8
+  points_per_segment: 30

@@ -21,10 +21,11 @@ if __name__ == "__main__":
         description="Detect vehicle velocity from DAS data."
     )
     parser.add_argument(
-        "--method",
+        "--methods",
         type=str,
+        nargs="+",
         choices=methods.keys(),
-        help="Method to use for detection.",
+        help="Methods to use for detection.",
     )
     parser.add_argument(
         "--transforms",
@@ -57,7 +58,7 @@ if __name__ == "__main__":
 
     print("Importing modules...")
     from src.visualize import visualize_lines
-    from src.group_lines import group_lines, group_segments
+    from src.group_lines import group_lines, group_segments, to_points
     from src.method import Method
     from src.get_data import get_data
     from datetime import time
@@ -87,15 +88,25 @@ if __name__ == "__main__":
     for t in transform_objects:
         data = t.apply(data)
 
-    method_module_name, method_class_name = methods[args.method]
-    method_cls = getattr(
-        importlib.import_module("src." + method_module_name), method_class_name
-    )
-    method_config = config["methods"].get(args.method, {})
-    method_obj: Method = method_cls(**method_config)
+    print("Initializing methods...")
+    method_objects = []
+    for method_name in args.methods:
+        method_module_name, method_class_name = methods[method_name]
+        method_cls = getattr(
+            importlib.import_module("src." + method_module_name), method_class_name
+        )
+        method_config = config["methods"].get(method_name, {})
+        method_obj: Method = method_cls(**method_config)
+        method_objects.append(method_obj)
 
     print("Detecting lines...")
-    lines = method_obj.detect(data)
+    lines = []
+    for method_obj in method_objects:
+        temp_lines = method_obj.detect(data)
+        # Some methods return lines in (rho, theta) format, convert to points
+        if len(temp_lines[0]) == 2:
+            temp_lines = [to_points(line, 0, data.shape[1]).reshape(-1).tolist() for line in temp_lines]
+        lines.extend(temp_lines)
 
     if args.group_lines:
         print("Grouping lines...")
