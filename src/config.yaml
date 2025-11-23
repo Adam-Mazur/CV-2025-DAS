@@ -48,4 +48,13 @@ group_lines:
 group_segments:
   min_cluster_size: 8
   min_samples: 8
-  points_per_segment: 30
+  points_per_segment: 0.3
+  rescale_factor: 1
+  metric: 'euclidean'
+
+group_all:
+  min_cluster_size: 12
+  min_samples: 8
+  points_per_segment: 0.3
+  rescale_factor: 1
+  metric: 'euclidean'

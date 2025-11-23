@@ -89,7 +89,14 @@ def group_lines(lines, width, min_cluster_size=2):
     return centroids
 
 
-def group_segments(segments, min_cluster_size=2, min_samples=1, points_per_segment=10):
+def group_segments(
+    segments,
+    min_cluster_size=2,
+    min_samples=1,
+    points_per_segment=10,
+    rescale_factor=1.0,
+    metric="euclidean",
+):
     n = len(segments)
 
     segments = np.array(segments)
@@ -99,18 +106,21 @@ def group_segments(segments, min_cluster_size=2, min_samples=1, points_per_segme
     points = []
     for seg in segments:
         x1, y1, x2, y2 = seg
-        t = np.random.rand(points_per_segment)
+        vec_len = math.hypot(x2 - x1, y2 - y1)
+        t = np.random.rand(int(points_per_segment * vec_len))
         x_random = x1 + t * (x2 - x1)
         y_random = y1 + t * (y2 - y1)
         pts = np.stack([x_random, y_random], axis=1)
         points.append(pts)
 
     points = np.concatenate(points)
+    points[:, 0] *= rescale_factor
 
     clusterer = hdbscan.HDBSCAN(
         min_samples=min_samples,
         min_cluster_size=min_cluster_size,
         allow_single_cluster=True,
+        metric=metric,
     )
     labels = clusterer.fit_predict(points)
 
@@ -120,6 +130,8 @@ def group_segments(segments, min_cluster_size=2, min_samples=1, points_per_segme
         members = points[labels == label]
         X = members[:, 0].reshape(-1, 1)
         y = members[:, 1]
+
+        X /= rescale_factor
 
         model = LinearRegression()
         model.fit(X, y)

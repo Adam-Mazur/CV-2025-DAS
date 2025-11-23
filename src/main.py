@@ -1,6 +1,11 @@
 import argparse
 
 
+def parse_dict(s):
+    pairs = s.split(",")
+    return dict(p.split("=", 1) for p in pairs)
+
+
 if __name__ == "__main__":
     methods = {
         "hough": ("hough_method", "HoughMethod"),
@@ -51,7 +56,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--group-lines",
-        action="store_true",
+        type=parse_dict,
         help="Whether to group similar detected lines.",
     )
     args = parser.parse_args()
@@ -101,19 +106,37 @@ if __name__ == "__main__":
 
     print("Detecting lines...")
     lines = []
-    for method_obj in method_objects:
+    for method_obj, method_name in zip(method_objects, args.methods):
         temp_lines = method_obj.detect(data)
+
+        to_group = (
+            args.group_lines.get(method_name, "").lower() == "true"
+            if args.group_lines
+            else False
+        )
+
+        if to_group and len(temp_lines) > 0:
+            print(f"Grouping lines detected by {method_name}...")
+            if len(temp_lines[0]) == 4:
+                temp_lines = group_segments(
+                    temp_lines, **config.get("group_segments", {})
+                )
+            else:
+                temp_lines = group_lines(
+                    temp_lines, data.shape[1], **config.get("group_lines", {})
+                )
+
         # Some methods return lines in (rho, theta) format, convert to points
         if len(temp_lines[0]) == 2:
-            temp_lines = [to_points(line, 0, data.shape[1]).reshape(-1).tolist() for line in temp_lines]
+            temp_lines = [
+                to_points(line, 0, data.shape[1]).reshape(-1).tolist()
+                for line in temp_lines
+            ]
         lines.extend(temp_lines)
 
-    if args.group_lines:
-        print("Grouping lines...")
-        if len(lines[0]) == 4:
-            lines = group_segments(lines, **config.get("group_segments", {}))
-        else:
-            lines = group_lines(lines, data.shape[1], **config.get("group_lines", {}))
+    if args.group_lines.get("all", "").lower() == "true" and len(lines) > 0:
+        print("Grouping all detected lines...")
+        lines = group_segments(lines, **config.get("group_all", {}))
 
     print("Visualizing results...")
     visualize_lines(data, lines, args.output)
