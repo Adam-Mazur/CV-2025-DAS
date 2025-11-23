@@ -166,10 +166,8 @@ def visualize_polynomial(
     axes[1].set_xlabel("Time [s]")
 
     for line, label in zip(lines, labels):
-        a, b, c, d = line
+        a, b, c, d, y1, y2 = line
 
-        y1 = 1
-        y2 = image.shape[0] - 1
         y = np.linspace(y1, y2 + 1, 1000)
         x = a * y**3 + b * y**2 + c * y + d
         der = 3 * a * y**2 + 2 * b * y + c
@@ -213,7 +211,6 @@ def visualize_polynomial(
             bbox=dict(boxstyle="round,pad=0.3", facecolor="black", alpha=0.7),
         )
 
-    plt.tight_layout()
     if save_path is not None:
         plt.savefig(save_path)
     else:

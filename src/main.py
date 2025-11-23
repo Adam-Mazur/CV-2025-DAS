@@ -62,11 +62,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cluster", action="store_true", help="Whether to cluster detected lines."
     )
+    parser.add_argument(
+        "--polynomial",
+        action="store_true",
+        help="Use polynomial fitting for line grouping.",
+    )
     args = parser.parse_args()
 
     print("Importing modules...")
-    from src.visualize import visualize_lines, visualize_clusters
-    from src.group_lines import group_lines, group_segments, to_points
+    from src.visualize import visualize_lines, visualize_clusters, visualize_polynomial
+    from src.group_lines import (
+        group_lines,
+        group_segments,
+        to_points,
+        group_segments_polynomial,
+    )
     from src.clustering import cluster
     from src.method import Method
     from src.get_data import get_data
@@ -82,6 +92,11 @@ if __name__ == "__main__":
     if args.cluster and not group_all:
         raise ValueError(
             "Clustering requires grouping all lines. Use --group-lines all=true."
+        )
+    
+    if args.polynomial and (not group_all or not args.cluster):
+        raise ValueError(
+            "Polynomial grouping requires grouping all lines and clustering. Use --group-lines all=true and --cluster."
         )
 
     with open("src/config.yaml", "r") as f:
@@ -151,7 +166,14 @@ if __name__ == "__main__":
         print("No lines detected. Exiting.")
         exit(0)
 
-    if group_all and args.cluster:
+    if args.polynomial and group_all and args.cluster:
+        print("Using polynomial fitting for line grouping...")
+        lines, stats = group_segments_polynomial(
+            lines, **config.get("group_polynomial", {}), return_stats=True
+        )
+        print("Clustering grouped lines...")
+        labels = cluster(stats, **config.get("clustering", {}))
+    elif group_all and args.cluster:
         print("Grouping all detected lines...")
         lines, stats = group_segments(
             lines, **config.get("group_all", {}), return_stats=True
@@ -164,7 +186,9 @@ if __name__ == "__main__":
         lines = group_segments(lines, return_stats=True, **config.get("group_all", {}))
 
     print("Visualizing results...")
-    if args.cluster:
+    if args.polynomial:
+        visualize_polynomial(data, lines, labels, args.output)
+    elif args.cluster:
         visualize_clusters(data, lines, labels, args.output)
     else:
         visualize_lines(data, lines, args.output)

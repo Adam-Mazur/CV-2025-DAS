@@ -1,4 +1,6 @@
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import Pipeline
 import warnings
 import numpy as np
 import hdbscan
@@ -143,6 +145,75 @@ def group_segments(
         y1 = model.predict([[x1]])[0]
         y2 = model.predict([[x2]])[0]
         centroids.append(np.array([x1, y1, x2, y2]))
+        stats.append(members)
+
+    if return_stats:
+        return centroids, stats
+
+    return centroids
+
+
+def group_segments_polynomial(
+    segments,
+    min_cluster_size=2,
+    min_samples=1,
+    points_per_segment=10,
+    rescale_factor=1.0,
+    metric="euclidean",
+    return_stats=False,
+):
+    n = len(segments)
+
+    segments = np.array(segments)
+    if segments.shape != (n, 4):
+        raise ValueError("Input segments must be of shape (n, 4)")
+
+    points = []
+    for seg in segments:
+        x1, y1, x2, y2 = seg
+        vec_len = math.hypot(x2 - x1, y2 - y1)
+        t = np.random.rand(int(points_per_segment * vec_len))
+        x_random = x1 + t * (x2 - x1)
+        y_random = y1 + t * (y2 - y1)
+        pts = np.stack([y_random, x_random], axis=1) # Change the order of coordinates, so that we have space over time
+        points.append(pts)
+
+    points = np.concatenate(points)
+    points[:, 0] *= rescale_factor
+
+    clusterer = hdbscan.HDBSCAN(
+        min_samples=min_samples,
+        min_cluster_size=min_cluster_size,
+        allow_single_cluster=True,
+        metric=metric,
+    )
+    labels = clusterer.fit_predict(points)
+
+    unique_labels = np.unique(labels[labels >= 0])
+    centroids = []
+    stats = []
+    for label in unique_labels:
+        members = points[labels == label]
+        X = members[:, 0].reshape(-1, 1)
+        y = members[:, 1]
+
+        X /= rescale_factor
+
+        model = Pipeline([
+            ("poly", PolynomialFeatures(degree=3)),
+            ("linreg", LinearRegression())
+        ])
+        model.fit(X, y)
+
+        x1 = X.min()
+        x2 = X.max()
+        linreg = model.named_steps['linreg']
+        a = linreg.coef_[3]
+        b = linreg.coef_[2]
+        c = linreg.coef_[1]
+        d = linreg.intercept_
+        
+        centroids.append((a, b, c, d, x1, x2))
         stats.append(members)
 
     if return_stats:
