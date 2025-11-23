@@ -145,3 +145,76 @@ def visualize_clusters(
         plt.savefig(save_path)
     else:
         plt.show()
+
+
+def visualize_polynomial(
+    image: pd.DataFrame, lines: list[tuple], labels: list[int], save_path: str = None
+):
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
+
+    unique_labels = set(labels)
+    cmap = mpl.cm.get_cmap("tab20", len(unique_labels))
+    label_to_color = {label: cmap(i) for i, label in enumerate(unique_labels)}
+
+    visualize_dataframe(axes[0], image, name="Detected Lines")
+
+    dx = image.columns[1] - image.columns[0]
+    dt = (image.index[1] - image.index[0]).total_seconds()
+
+    axes[1].set_title("Velocity over time")
+    axes[1].set_ylabel("Velocity [km/h]")
+    axes[1].set_xlabel("Time [s]")
+
+    for line, label in zip(lines, labels):
+        a, b, c, d = line
+
+        y1 = 1
+        y2 = image.shape[0] - 1
+        y = np.linspace(y1, y2 + 1, 1000)
+        x = a * y**3 + b * y**2 + c * y + d
+        der = 3 * a * y**2 + 2 * b * y + c
+        w = image.shape[1]
+        mask = (x >= 0) & (x <= w - 1)
+        if not np.any(mask):
+            continue
+
+        x_valid = x[mask]
+        y_valid = y[mask]
+        der_valid = der[mask] * (dx / dt) * 3.6  # convert to km/h
+
+        axes[0].plot(x_valid, y_valid, color=label_to_color[label], linewidth=2)
+        axes[1].plot(y_valid * dt, der_valid, color=label_to_color[label], linewidth=2)
+
+        y1 = y_valid[0]
+        y2 = y_valid[-1]
+        x1 = np.clip(x_valid[0], 0, w - 1)
+        x2 = np.clip(x_valid[-1], 0, w - 1)
+        der1 = der_valid[0]
+        der2 = der_valid[-1]
+
+        mid_x = (x1 + x2) / 2
+        mid_y = (y1 + y2) / 2
+        axes[0].text(
+            mid_x,
+            mid_y,
+            f"{label}",
+            color="yellow",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="black", alpha=0.7),
+        )
+
+        mid_der = (der1 + der2) / 2
+        axes[1].text(
+            mid_y * dt,
+            mid_der,
+            f"{label}",
+            color="yellow",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="black", alpha=0.7),
+        )
+
+    plt.tight_layout()
+    if save_path is not None:
+        plt.savefig(save_path)
+    else:
+        plt.show()
