@@ -58,3 +58,6 @@ group_all:
   points_per_segment: 0.3
   rescale_factor: 1
   metric: 'euclidean'
+
+clustering:
+  n_clusters: 3

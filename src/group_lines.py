@@ -96,6 +96,7 @@ def group_segments(
     points_per_segment=10,
     rescale_factor=1.0,
     metric="euclidean",
+    return_stats=False,
 ):
     n = len(segments)
 
@@ -126,6 +127,7 @@ def group_segments(
 
     unique_labels = np.unique(labels[labels >= 0])
     centroids = []
+    stats = []
     for label in unique_labels:
         members = points[labels == label]
         X = members[:, 0].reshape(-1, 1)
@@ -141,5 +143,9 @@ def group_segments(
         y1 = model.predict([[x1]])[0]
         y2 = model.predict([[x2]])[0]
         centroids.append(np.array([x1, y1, x2, y2]))
+        stats.append(members)
+
+    if return_stats:
+        return centroids, stats
 
     return centroids

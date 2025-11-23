@@ -59,17 +59,30 @@ if __name__ == "__main__":
         type=parse_dict,
         help="Whether to group similar detected lines.",
     )
+    parser.add_argument(
+        "--cluster", action="store_true", help="Whether to cluster detected lines."
+    )
     args = parser.parse_args()
 
     print("Importing modules...")
-    from src.visualize import visualize_lines
+    from src.visualize import visualize_lines, visualize_clusters
     from src.group_lines import group_lines, group_segments, to_points
+    from src.clustering import cluster
     from src.method import Method
     from src.get_data import get_data
     from datetime import time
     import src.transforms
     import importlib
     import yaml
+
+    group_all = (
+        args.group_lines.get("all", "").lower() == "true" if args.group_lines else False
+    )
+
+    if args.cluster and not group_all:
+        raise ValueError(
+            "Clustering requires grouping all lines. Use --group-lines all=true."
+        )
 
     with open("src/config.yaml", "r") as f:
         config = yaml.safe_load(f)
@@ -134,9 +147,24 @@ if __name__ == "__main__":
             ]
         lines.extend(temp_lines)
 
-    if args.group_lines.get("all", "").lower() == "true" and len(lines) > 0:
+    if len(lines) <= 0:
+        print("No lines detected. Exiting.")
+        exit(0)
+
+    if group_all and args.cluster:
         print("Grouping all detected lines...")
-        lines = group_segments(lines, **config.get("group_all", {}))
+        lines, stats = group_segments(
+            lines, **config.get("group_all", {}), return_stats=True
+        )
+
+        print("Clustering grouped lines...")
+        labels = cluster(stats, **config.get("clustering", {}))
+    elif group_all:
+        print("Grouping all detected lines...")
+        lines = group_segments(lines, return_stats=True, **config.get("group_all", {}))
 
     print("Visualizing results...")
-    visualize_lines(data, lines, args.output)
+    if args.cluster:
+        visualize_clusters(data, lines, labels, args.output)
+    else:
+        visualize_lines(data, lines, args.output)

@@ -1,5 +1,6 @@
 from src.transforms import Transform
 from matplotlib.colors import Normalize
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -76,11 +77,11 @@ def visualize_lines(image: pd.DataFrame, lines: list[tuple], save_path: str = No
         elif len(line) == 4:
             x1, y1, x2, y2 = line
             ax.plot([x1, x2], [y1, y2], color="red", linewidth=2)
-        
+
         velocity = (x2 - x1) / (y2 - y1) if y2 != y1 else float("inf")
         dx = image.columns[1] - image.columns[0]
         dt = (image.index[1] - image.index[0]).total_seconds()
-        velocity = velocity * (dx / dt) * 3.6 # Convert to km/h
+        velocity = velocity * (dx / dt) * 3.6  # Convert to km/h
         velocity = abs(velocity)
         mid_x = (x1 + x2) / 2
         mid_y = (y1 + y2) / 2
@@ -88,6 +89,52 @@ def visualize_lines(image: pd.DataFrame, lines: list[tuple], save_path: str = No
             mid_x,
             mid_y,
             f"{velocity:.2f} km/h",
+            color="yellow",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="black", alpha=0.7),
+        )
+
+    plt.tight_layout()
+    if save_path is not None:
+        plt.savefig(save_path)
+    else:
+        plt.show()
+
+
+def visualize_clusters(
+    image: pd.DataFrame, lines: list[tuple], labels: list[int], save_path: str = None
+):
+    _ = plt.figure(figsize=(6, 6))
+    ax = plt.axes()
+
+    unique_labels = set(labels)
+    cmap = mpl.cm.get_cmap("vanimo", len(unique_labels))
+    label_to_color = {label: cmap(i) for i, label in enumerate(unique_labels)}
+
+    visualize_dataframe(ax, image, name="Detected Lines")
+
+    for line, label in zip(lines, labels):
+        if len(line) == 2:
+            rho, theta = line
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x1 = 1
+            x2 = image.shape[1] - 1
+            y1 = (rho - a * x1) / b
+            y2 = (rho - a * x2) / b
+            y1 = np.clip(y1, 0, image.shape[0] - 1)
+            y2 = np.clip(y2, 0, image.shape[0] - 1)
+            ax.plot([x1, x2], [y1, y2], color=label_to_color[label], linewidth=2)
+        elif len(line) == 4:
+            x1, y1, x2, y2 = line
+            ax.plot([x1, x2], [y1, y2], color=label_to_color[label], linewidth=2)
+
+        mid_x = (x1 + x2) / 2
+        mid_y = (y1 + y2) / 2
+        ax.text(
+            mid_x,
+            mid_y,
+            f"{label}",
             color="yellow",
             fontsize=9,
             bbox=dict(boxstyle="round,pad=0.3", facecolor="black", alpha=0.7),
