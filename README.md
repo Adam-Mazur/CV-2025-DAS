@@ -128,8 +128,8 @@ as features for clustering.
 Here are the final visualizations we achieved with the algorithm:
 
 ### 09:05:52 - 09:07:42
-![Final result 1](images/vis1.jpg)
+![Final result 1](images/vis1_2.jpg)
 ### 09:07:42 - 09:09:32
-![Final result 2](images/vis2.jpg)
+![Final result 2](images/vis2_2.jpg)
 ### 09:40:52 - 09:42:42
-![Final result 3](images/vis3.jpg)
+![Final result 3](images/vis3_2.jpg)

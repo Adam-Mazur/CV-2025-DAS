@@ -152,10 +152,6 @@ def visualize_polynomial(
 ):
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
 
-    unique_labels = set(labels)
-    cmap = mpl.cm.get_cmap("tab20", len(unique_labels))
-    label_to_color = {label: cmap(i) for i, label in enumerate(unique_labels)}
-
     visualize_dataframe(axes[0], image, name="Detected Lines")
 
     dx = image.columns[1] - image.columns[0]
@@ -180,8 +176,8 @@ def visualize_polynomial(
         y_valid = y[mask]
         der_valid = der[mask] * (dx / dt) * 3.6  # convert to km/h
 
-        axes[0].plot(x_valid, y_valid, color=label_to_color[label], linewidth=2)
-        axes[1].plot(y_valid * dt, der_valid, color=label_to_color[label], linewidth=2)
+        axes[0].plot(x_valid, y_valid, color="red", linewidth=2)
+        axes[1].plot(y_valid * dt, der_valid, color="red", linewidth=2)
 
         y1 = y_valid[0]
         y2 = y_valid[-1]
